@@ -1,0 +1,17 @@
+# Dependency versions for Python 3.11/3.12/3.13 Windows and macOS builds.
+altgraph==0.17.5
+packaging==26.3
+pefile==2024.8.26
+pyinstaller-hooks-contrib==2026.8
+pywin32-ctypes==0.2.3
+setuptools==84.0.0
+six==1.17.0
+PySide6-Addons==6.10.2
+PySide6-Essentials==6.10.2
+shiboken6==6.10.2
+macholib==1.16.4
+pyobjc-core==12.2.2
+pyobjc-framework-Cocoa==12.2.2
+pyobjc-framework-CoreText==12.2.2
+pyobjc-framework-Quartz==12.2.2
+pyobjc-framework-ApplicationServices==12.2.2

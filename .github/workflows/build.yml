@@ -1,0 +1,57 @@
+name: Build desktop apps
+on:
+  workflow_dispatch:
+  push:
+    branches: ['main']
+    tags: ['v*']
+  pull_request:
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+        target:
+          - os: windows-2022
+            artifact: windows-x64
+            architecture: x64
+          - os: macos-15-intel
+            artifact: macos-intel
+            architecture: x64
+          - os: macos-15
+            artifact: macos-apple-silicon
+            architecture: arm64
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.target.architecture }}
+      - run: python -m pip install -r requirements.txt
+      - run: python -m unittest discover -s tests -v
+        env:
+          QT_QPA_PLATFORM: offscreen
+      - run: python -m PyInstaller packaging/helper.spec --noconfirm
+      - name: Smoke-test packaged Windows app
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $helperProcess = Start-Process -FilePath 'dist/Online Class Record Helper/Online Class Record Helper.exe' -ArgumentList '--smoke-test' -WindowStyle Hidden -PassThru -Wait
+          if ($helperProcess.ExitCode -ne 0) { throw "Packaged smoke test failed: $($helperProcess.ExitCode)" }
+      - name: Smoke-test packaged macOS app
+        if: runner.os == 'macOS'
+        run: '"dist/Online Class Record Helper.app/Contents/MacOS/Online Class Record Helper" --smoke-test'
+      - name: Archive macOS bundle preserving executable permissions
+        if: runner.os == 'macOS'
+        run: ditto -c -k --sequesterRsrc --keepParent 'dist/Online Class Record Helper.app' 'dist/${{ matrix.target.artifact }}.zip'
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: ${{ matrix.target.artifact }}-python-${{ matrix.python-version }}
+          path: dist/Online Class Record Helper/
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'macOS'
+        with:
+          name: ${{ matrix.target.artifact }}-python-${{ matrix.python-version }}
+          path: dist/${{ matrix.target.artifact }}.zip
